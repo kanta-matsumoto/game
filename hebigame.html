@@ -1,307 +1,3810 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ヘビゲーム</title>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>理科スネーク - 答えて伸びる復習ゲーム</title>
   <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --green: #22c55e;
+      --green2: #86efac;
+      --red: #fb7185;
+      --yellow: #facc15;
+      --blue: #38bdf8;
+      --gold: #fbbf24;
+      --line: rgba(255,255,255,0.16);
+      --shadow: 0 24px 70px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: "Yu Gothic", "Meiryo", sans-serif;
-      background: #111827;
-      color: white;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(34,197,94,0.18), transparent 32%),
+        var(--bg);
+      color: var(--text);
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      padding: 18px;
     }
 
-    .game-box {
-      text-align: center;
-      background: #1f2937;
-      padding: 24px;
-      border-radius: 18px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    .app {
+      width: min(980px, 100%);
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
     }
+
+    .card {
+      background: rgba(17, 24, 39, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .game-card { text-align: center; }
 
     h1 {
-      margin-top: 0;
-      font-size: 28px;
+      margin: 0 0 6px;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: 0.04em;
     }
 
-    .info {
-      display: flex;
-      justify-content: space-between;
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
       margin-bottom: 12px;
-      font-size: 18px;
+    }
+
+    .stat {
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px;
+      font-weight: 700;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 2px;
     }
 
     canvas {
-      background: #0f172a;
-      border: 4px solid #4ade80;
-      border-radius: 8px;
+      width: min(100%, 440px);
+      height: auto;
+      aspect-ratio: 1 / 1;
+      background: #020617;
+      border: 4px solid var(--green);
+      border-radius: 14px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .message {
+      min-height: 28px;
+      margin: 10px 0 0;
+      color: var(--yellow);
+      font-weight: 700;
+    }
+
+    .message.combo { color: #fef08a; }
+    .message.gold { color: #fde68a; }
+    .message.danger { color: #fecdd3; }
+
+    .side h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    select, button { font: inherit; }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #020617;
+      color: var(--text);
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
     }
 
     button {
-      margin-top: 16px;
-      padding: 10px 20px;
       border: none;
       border-radius: 999px;
-      background: #4ade80;
+      background: var(--green);
       color: #052e16;
-      font-weight: bold;
+      font-weight: 800;
+      padding: 11px 14px;
       cursor: pointer;
-      font-size: 16px;
     }
 
-    button:hover {
-      background: #86efac;
-    }
+    button:hover { filter: brightness(1.08); }
+    button.secondary { background: #334155; color: var(--text); }
+    button.danger { background: var(--red); color: #fff1f2; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .controls {
-      margin-top: 18px;
+      margin-top: 14px;
       display: grid;
-      grid-template-columns: repeat(3, 60px);
+      grid-template-columns: repeat(3, 62px);
       gap: 8px;
       justify-content: center;
     }
 
     .controls button {
-      margin: 0;
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 14px;
+      padding: 12px 0;
       font-size: 20px;
     }
 
-    .empty {
-      visibility: hidden;
+    .empty { visibility: hidden; }
+
+    .quiz-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      z-index: 10;
     }
 
-    .message {
-      margin-top: 10px;
-      color: #facc15;
-      font-weight: bold;
-      min-height: 24px;
+    .quiz {
+      width: min(640px, 100%);
+      background: #111827;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quiz.gold-quiz {
+      border-color: rgba(251,191,36,0.85);
+      box-shadow: 0 24px 80px rgba(251,191,36,0.20);
+    }
+
+    .quiz.revenge-quiz {
+      border-color: rgba(251,113,133,0.85);
+      box-shadow: 0 24px 80px rgba(251,113,133,0.18);
+    }
+
+    .quiz-tag {
+      display: inline-block;
+      background: rgba(56,189,248,0.16);
+      color: #bae6fd;
+      border: 1px solid rgba(56,189,248,0.35);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .quiz-tag.gold {
+      background: rgba(251,191,36,0.16);
+      color: #fef3c7;
+      border-color: rgba(251,191,36,0.55);
+    }
+
+    .quiz-tag.revenge {
+      background: rgba(251,113,133,0.16);
+      color: #ffe4e6;
+      border-color: rgba(251,113,133,0.55);
+    }
+
+    .question {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.55;
+      margin: 0 0 14px;
+    }
+
+    .choices {
+      display: grid;
+      gap: 10px;
+    }
+
+    .choice {
+      text-align: left;
+      border-radius: 14px;
+      background: #1f2937;
+      color: var(--text);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+
+    .choice.correct {
+      background: rgba(34,197,94,0.25);
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.20);
+    }
+
+    .choice.wrong {
+      background: rgba(251,113,133,0.25);
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(251,113,133,0.20);
+    }
+
+    .result-effect {
+      display: none;
+      margin: 0 0 14px;
+      padding: 14px;
+      border-radius: 16px;
+      text-align: center;
+      font-size: clamp(26px, 6vw, 42px);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      animation: pop 0.28s ease-out;
+    }
+
+    .result-effect.correct {
+      display: block;
+      background: rgba(34,197,94,0.18);
+      color: #bbf7d0;
+      border: 1px solid rgba(34,197,94,0.55);
+    }
+
+    .result-effect.wrong {
+      display: block;
+      background: rgba(251,113,133,0.18);
+      color: #ffe4e6;
+      border: 1px solid rgba(251,113,133,0.55);
+    }
+
+    .result-effect.revenge {
+      display: block;
+      background: rgba(56,189,248,0.18);
+      color: #bae6fd;
+      border: 1px solid rgba(56,189,248,0.55);
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.88); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .explanation {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(250,204,21,0.12);
+      color: #fef3c7;
+      line-height: 1.7;
+      display: none;
+    }
+
+    #continueBtn {
+      display: none;
+      width: 100%;
+      margin-top: 14px;
+    }
+
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: min(100%, 440px);
+      margin: 0 auto;
+    }
+
+    .start-box {
+      background: rgba(15,23,42,0.88);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      max-width: 320px;
+    }
+
+    .start-box strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .mini-info {
+      margin-top: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .mini-info strong { color: var(--text); }
+
+    .report-card {
+      grid-column: 1 / -1;
+      display: none;
+    }
+
+    .report-card h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .report-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+
+    .report-box {
+      background: #020617;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .report-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .review-item {
+      background: #020617;
+      border: 1px solid rgba(251,113,133,0.35);
+      border-radius: 16px;
+      padding: 12px;
+      line-height: 1.7;
+    }
+
+    .review-item strong { color: #fecdd3; }
+    .review-item .answer { color: #bbf7d0; }
+    .review-item .explain { color: #fde68a; }
+
+    @media (max-width: 820px) {
+      .app { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .report-summary { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
-  <div class="game-box">
-    <h1>ヘビゲーム</h1>
+  <main class="app">
+    <section class="card game-card">
+      <h1>理科スネーク</h1>
+      <p class="subtitle">エサを取る → 理科クイズに答える → 正解するとヘビが伸びる</p>
 
-    <div class="info">
-      <div>スコア：<span id="score">0</span></div>
-      <div>最高：<span id="bestScore">0</span></div>
-    </div>
+      <div class="stats">
+        <div class="stat"><span>スコア</span><strong id="score">0</strong></div>
+        <div class="stat"><span>正解数</span><strong id="correctCount">0</strong></div>
+        <div class="stat"><span>ライフ</span><strong id="lives">3</strong></div>
+        <div class="stat"><span>コンボ</span><strong id="comboCount">0</strong></div>
+        <div class="stat"><span>最高</span><strong id="bestScore">0</strong></div>
+      </div>
 
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="440" height="440"></canvas>
+        <div class="start-overlay" id="startOverlay">
+          <div class="start-box">
+            <strong>スタートを押してください</strong>
+            矢印キーか下のボタンで操作します。
+          </div>
+        </div>
+      </div>
 
-    <div class="message" id="message">矢印キーで操作</div>
+      <p class="message" id="message">単元を選んでスタート</p>
 
-    <button onclick="restartGame()">リスタート</button>
+      <div class="controls">
+        <button class="empty">×</button>
+        <button onclick="setDirection('up')">▲</button>
+        <button class="empty">×</button>
+        <button onclick="setDirection('left')">◀</button>
+        <button onclick="setDirection('down')">▼</button>
+        <button onclick="setDirection('right')">▶</button>
+      </div>
+    </section>
 
-    <div class="controls">
-      <button class="empty">×</button>
-      <button onclick="changeDirection('up')">▲</button>
-      <button class="empty">×</button>
+    <aside class="card side">
+      <h2>ゲーム設定</h2>
 
-      <button onclick="changeDirection('left')">◀</button>
-      <button onclick="changeDirection('down')">▼</button>
-      <button onclick="changeDirection('right')">▶</button>
+      <label for="unitSelect">出題範囲</label>
+      <select id="unitSelect">
+        <option value="all">全範囲ミックス</option>
+        <option value="chu1">中1理科</option>
+        <option value="chu2">中2理科</option>
+        <option value="chu3">中3理科</option>
+        <option value="chemistry">化学</option>
+        <option value="biology">生物</option>
+        <option value="physics">物理</option>
+        <option value="earth">地学</option>
+      </select>
+
+      <label for="speedSelect">スピード</label>
+      <select id="speedSelect">
+        <option value="170">ゆっくり</option>
+        <option value="130" selected>ふつう</option>
+        <option value="95">速い</option>
+      </select>
+
+      <div class="buttons">
+        <button onclick="startGame()">スタート</button>
+        <button class="secondary" onclick="pauseOrResume()">一時停止</button>
+        <button class="danger" onclick="resetGame()">リセット</button>
+      </div>
+
+      <div class="mini-info">
+        <strong>G</strong> はレアエサです。正解すると得点が2倍になり、少しの間スピードが下がります。
+      </div>
+    </aside>
+
+    <section class="card report-card" id="reviewReport"></section>
+  </main>
+
+  <div class="quiz-backdrop" id="quizBackdrop">
+    <div class="quiz" id="quizBox">
+      <div class="quiz-tag" id="quizTag">理科クイズ</div>
+      <div class="result-effect" id="resultEffect"></div>
+      <p class="question" id="questionText"></p>
+      <div class="choices" id="choices"></div>
+      <div class="explanation" id="explanation"></div>
+      <button id="continueBtn" onclick="continueGame()">ゲームに戻る</button>
     </div>
   </div>
 
   <script>
+    const quizData = [
+      {
+        grade: "chu1", field: "chemistry",
+        q: "水にとけた物質が、再び固体として出てくる現象を何という？",
+        choices: ["蒸留", "再結晶", "中和", "酸化"],
+        answer: 1,
+        explanation: "再結晶は、溶けていた物質を結晶として取り出す方法です。温度による溶ける量の違いを利用します。"
+      },
+      {
+        grade: "chu1", field: "biology",
+        q: "植物の葉で、光合成が主に行われる場所はどこ？",
+        choices: ["気孔", "葉緑体", "根毛", "道管"],
+        answer: 1,
+        explanation: "光合成は葉緑体で行われます。二酸化炭素と水からデンプンなどをつくります。"
+      },
+      {
+        grade: "chu1", field: "physics",
+        q: "音の大きさと関係が深いものはどれ？",
+        choices: ["振幅", "振動数", "光の速さ", "質量"],
+        answer: 0,
+        explanation: "音の大きさは振幅と関係します。音の高さは振動数と関係します。"
+      },
+      {
+        grade: "chu1", field: "earth",
+        q: "火山灰などが固まってできた岩石はどれ？",
+        choices: ["石灰岩", "凝灰岩", "花こう岩", "チャート"],
+        answer: 1,
+        explanation: "凝灰岩は火山灰などが堆積して固まった岩石です。"
+      },
+      {
+        grade: "chu1", field: "chemistry",
+        q: "物質を水に入れても、それ以上溶けない状態を何という？",
+        choices: ["飽和", "融解", "沸騰", "昇華"],
+        answer: 0,
+        explanation: "それ以上物質が溶けない状態を飽和といいます。"
+      },
+
+      {
+        grade: "chu2", field: "chemistry",
+        q: "酸化銅から銅を取り出すとき、酸化銅から酸素を奪う反応を何という？",
+        choices: ["酸化", "還元", "中和", "蒸発"],
+        answer: 1,
+        explanation: "酸素を失う変化を還元といいます。酸化銅が還元されると銅になります。"
+      },
+      {
+        grade: "chu2", field: "biology",
+        q: "血液中で酸素を運ぶ主な成分はどれ？",
+        choices: ["白血球", "血小板", "赤血球", "血しょう"],
+        answer: 2,
+        explanation: "赤血球に含まれるヘモグロビンが酸素を運びます。"
+      },
+      {
+        grade: "chu2", field: "physics",
+        q: "電流の単位はどれ？",
+        choices: ["V", "A", "Ω", "W"],
+        answer: 1,
+        explanation: "電流の単位はアンペア A です。電圧は V、抵抗は Ω です。"
+      },
+      {
+        grade: "chu2", field: "earth",
+        q: "空気中の水蒸気が水滴になり始める温度を何という？",
+        choices: ["融点", "沸点", "露点", "気圧"],
+        answer: 2,
+        explanation: "水蒸気が凝結し始める温度を露点といいます。"
+      },
+      {
+        grade: "chu2", field: "chemistry",
+        q: "化学変化の前後で変わらないものはどれ？",
+        choices: ["物質の種類", "原子の組み合わせ", "原子の種類と数", "色"],
+        answer: 2,
+        explanation: "化学変化では原子の組み合わせは変わりますが、原子の種類と数は変わりません。"
+      },
+
+      {
+        grade: "chu3", field: "chemistry",
+        q: "酸とアルカリが反応して、水と塩ができる反応を何という？",
+        choices: ["中和", "酸化", "還元", "分解"],
+        answer: 0,
+        explanation: "酸とアルカリが互いの性質を打ち消し合う反応を中和といいます。"
+      },
+      {
+        grade: "chu3", field: "biology",
+        q: "親の形質が子に伝わることを何という？",
+        choices: ["進化", "遺伝", "消化", "分化"],
+        answer: 1,
+        explanation: "親の形質が子に伝わることを遺伝といいます。"
+      },
+      {
+        grade: "chu3", field: "physics",
+        q: "磁界の中でコイルを動かすと電流が流れる現象を何という？",
+        choices: ["静電気", "電磁誘導", "放電", "熱伝導"],
+        answer: 1,
+        explanation: "コイルの中の磁界が変化すると電流が流れます。これを電磁誘導といいます。"
+      },
+      {
+        grade: "chu3", field: "earth",
+        q: "太陽のまわりを公転する天体で、地球もこれに含まれるものは？",
+        choices: ["恒星", "惑星", "衛星", "星雲"],
+        answer: 1,
+        explanation: "地球は太陽のまわりを公転する惑星です。月は地球の衛星です。"
+      },
+      {
+        grade: "chu3", field: "chemistry",
+        q: "塩化銅水溶液を電気分解したとき、陰極に付着する物質は？",
+        choices: ["銅", "塩素", "酸素", "水素"],
+        answer: 0,
+        explanation: "塩化銅水溶液の電気分解では、陰極に銅が付着し、陽極から塩素が発生します。"
+      },
+      {
+        grade: "chu3", field: "biology",
+        q: "減数分裂でできる生殖細胞の染色体数は、体細胞と比べてどうなる？",
+        choices: ["同じ", "2倍", "半分", "0になる"],
+        answer: 2,
+        explanation: "減数分裂では染色体数が半分になります。受精で元の数に戻ります。"
+      },
+      {
+        grade: "chu2", field: "physics",
+        q: "抵抗が一定のとき、電圧を2倍にすると電流はどうなる？",
+        choices: ["半分になる", "変わらない", "2倍になる", "4倍になる"],
+        answer: 2,
+        explanation: "オームの法則 I = V ÷ R より、抵抗が一定なら電流は電圧に比例します。"
+      },
+      {
+        grade: "chu1", field: "earth",
+        q: "地震のゆれが最初に到達する速い波はどれ？",
+        choices: ["P波", "S波", "表面波", "音波"],
+        answer: 0,
+        explanation: "P波はS波より速く伝わるため、最初の小さなゆれとして観測されます。"
+      },
+      {
+        grade: "chu2", field: "biology",
+        q: "デンプンを分解するだ液中の消化酵素はどれ？",
+        choices: ["ペプシン", "アミラーゼ", "リパーゼ", "トリプシン"],
+        answer: 1,
+        explanation: "だ液に含まれるアミラーゼは、デンプンを麦芽糖などに分解します。"
+      },
+      {
+        grade: "chu3", field: "physics",
+        q: "物体にはたらく重力の大きさを何という？",
+        choices: ["質量", "密度", "重さ", "体積"],
+        answer: 2,
+        explanation: "重さは物体にはたらく重力の大きさです。質量とは区別します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「水に溶けていた物質を、温度による溶ける量の違いを利用して結晶として取り出す方法」",
+              "choices": [
+                      "化合物",
+                      "溶媒",
+                      "塩化銅",
+                      "再結晶"
+              ],
+              "answer": 3,
+              "explanation": "答えは「再結晶」です。水に溶けていた物質を、温度による溶ける量の違いを利用して結晶として取り出す方法ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「液体と、水に溶けない固体をろ紙などで分ける方法」",
+              "choices": [
+                      "水素",
+                      "電解質",
+                      "ろ過",
+                      "中性"
+              ],
+              "answer": 2,
+              "explanation": "答えは「ろ過」です。液体と、水に溶けない固体をろ紙などで分ける方法ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「液体を沸騰させて出た気体を冷やし、沸点の違いで物質を分ける方法」",
+              "choices": [
+                      "蒸留",
+                      "酸化銅",
+                      "塩",
+                      "酸性"
+              ],
+              "answer": 0,
+              "explanation": "答えは「蒸留」です。液体を沸騰させて出た気体を冷やし、沸点の違いで物質を分ける方法ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質が水などの液体に溶けて、全体に均一に広がること」",
+              "choices": [
+                      "飽和水溶液",
+                      "陰極",
+                      "溶解",
+                      "水素"
+              ],
+              "answer": 2,
+              "explanation": "答えは「溶解」です。物質が水などの液体に溶けて、全体に均一に広がることことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質を溶かしている液体。食塩水では水がこれにあたる」",
+              "choices": [
+                      "溶媒",
+                      "塩素",
+                      "炭酸水素ナトリウム",
+                      "中和"
+              ],
+              "answer": 0,
+              "explanation": "答えは「溶媒」です。物質を溶かしている液体。食塩水では水がこれにあたることを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「溶媒に溶けている物質。食塩水では食塩がこれにあたる」",
+              "choices": [
+                      "化合",
+                      "溶解",
+                      "溶質",
+                      "原子"
+              ],
+              "answer": 2,
+              "explanation": "答えは「溶質」です。溶媒に溶けている物質。食塩水では食塩がこれにあたることを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質が水に溶けて、全体が均一になった液体」",
+              "choices": [
+                      "蒸留",
+                      "水溶液",
+                      "単体",
+                      "電解質"
+              ],
+              "answer": 1,
+              "explanation": "答えは「水溶液」です。物質が水に溶けて、全体が均一になった液体ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「ある温度で、物質がそれ以上溶けないところまで溶けた水溶液」",
+              "choices": [
+                      "中性",
+                      "分解",
+                      "二酸化炭素",
+                      "飽和水溶液"
+              ],
+              "answer": 3,
+              "explanation": "答えは「飽和水溶液」です。ある温度で、物質がそれ以上溶けないところまで溶けた水溶液ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「一定量の水に溶ける物質の最大量」",
+              "choices": [
+                      "酸性",
+                      "単体",
+                      "再結晶",
+                      "溶解度"
+              ],
+              "answer": 3,
+              "explanation": "答えは「溶解度」です。一定量の水に溶ける物質の最大量ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質の一定体積あたりの質量。質量を体積で割って求める」",
+              "choices": [
+                      "分子",
+                      "電解質",
+                      "陰イオン",
+                      "密度"
+              ],
+              "answer": 3,
+              "explanation": "答えは「密度」です。物質の一定体積あたりの質量。質量を体積で割って求めることを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「1種類の物質だけでできているもの」",
+              "choices": [
+                      "化学変化",
+                      "酸化銅",
+                      "純粋な物質",
+                      "ろ過"
+              ],
+              "answer": 2,
+              "explanation": "答えは「純粋な物質」です。1種類の物質だけでできているものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「複数の物質が混ざり合っているもの」",
+              "choices": [
+                      "分解",
+                      "純粋な物質",
+                      "混合物",
+                      "密度"
+              ],
+              "answer": 2,
+              "explanation": "答えは「混合物」です。複数の物質が混ざり合っているものことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「1種類の元素だけからできている物質」",
+              "choices": [
+                      "化学変化",
+                      "単体",
+                      "塩化銅",
+                      "酸性"
+              ],
+              "answer": 1,
+              "explanation": "答えは「単体」です。1種類の元素だけからできている物質ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「2種類以上の元素が化学的に結びついてできた物質」",
+              "choices": [
+                      "分子",
+                      "アルカリ性",
+                      "化合物",
+                      "再結晶"
+              ],
+              "answer": 2,
+              "explanation": "答えは「化合物」です。2種類以上の元素が化学的に結びついてできた物質ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質をつくる基本的な成分の種類」",
+              "choices": [
+                      "元素",
+                      "水溶液",
+                      "塩化銅",
+                      "酸化"
+              ],
+              "answer": 0,
+              "explanation": "答えは「元素」です。物質をつくる基本的な成分の種類ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質をつくる最小の粒子として扱われるもの」",
+              "choices": [
+                      "酸化銅",
+                      "原子",
+                      "硫化鉄",
+                      "陰極"
+              ],
+              "answer": 1,
+              "explanation": "答えは「原子」です。物質をつくる最小の粒子として扱われるものことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「いくつかの原子が結びつき、物質の性質を示す粒子」",
+              "choices": [
+                      "イオン",
+                      "酸素",
+                      "分子",
+                      "塩素"
+              ],
+              "answer": 2,
+              "explanation": "答えは「分子」です。いくつかの原子が結びつき、物質の性質を示す粒子ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質が別の物質に変わる変化」",
+              "choices": [
+                      "炭酸水素ナトリウム",
+                      "ダニエル電池",
+                      "陽イオン",
+                      "化学変化"
+              ],
+              "answer": 3,
+              "explanation": "答えは「化学変化」です。物質が別の物質に変わる変化ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質の種類は変わらず、固体・液体・気体の状態が変わる変化」",
+              "choices": [
+                      "分解",
+                      "蒸留",
+                      "化合物",
+                      "状態変化"
+              ],
+              "answer": 3,
+              "explanation": "答えは「状態変化」です。物質の種類は変わらず、固体・液体・気体の状態が変わる変化ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「化学変化の前後で、反応に関わった物質全体の質量が変わらないという法則」",
+              "choices": [
+                      "飽和水溶液",
+                      "質量保存の法則",
+                      "ろ過",
+                      "アンモニア"
+              ],
+              "answer": 1,
+              "explanation": "答えは「質量保存の法則」です。化学変化の前後で、反応に関わった物質全体の質量が変わらないという法則ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「物質が酸素と結びつく化学変化」",
+              "choices": [
+                      "酸化",
+                      "アルカリ性",
+                      "混合物",
+                      "中性"
+              ],
+              "answer": 0,
+              "explanation": "答えは「酸化」です。物質が酸素と結びつく化学変化ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「酸化物から酸素が取り除かれる化学変化」",
+              "choices": [
+                      "電解質",
+                      "溶解度",
+                      "還元",
+                      "水素"
+              ],
+              "answer": 2,
+              "explanation": "答えは「還元」です。酸化物から酸素が取り除かれる化学変化ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「1種類の物質が2種類以上の別の物質に分かれる化学変化」",
+              "choices": [
+                      "ダニエル電池",
+                      "酸性",
+                      "分解",
+                      "二酸化炭素"
+              ],
+              "answer": 2,
+              "explanation": "答えは「分解」です。1種類の物質が2種類以上の別の物質に分かれる化学変化ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「2種類以上の物質が結びついて、別の1種類の物質ができる化学変化」",
+              "choices": [
+                      "ろ過",
+                      "化合",
+                      "硫化鉄",
+                      "塩素"
+              ],
+              "answer": 1,
+              "explanation": "答えは「化合」です。2種類以上の物質が結びついて、別の1種類の物質ができる化学変化ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「銅を空気中で加熱したときにできる黒色の物質」",
+              "choices": [
+                      "溶解",
+                      "酸化銅",
+                      "蒸留",
+                      "化合物"
+              ],
+              "answer": 1,
+              "explanation": "答えは「酸化銅」です。銅を空気中で加熱したときにできる黒色の物質ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「鉄と硫黄を加熱して化合させたときにできる黒色の物質」",
+              "choices": [
+                      "硫化鉄",
+                      "ろ過",
+                      "塩素",
+                      "化学変化"
+              ],
+              "answer": 0,
+              "explanation": "答えは「硫化鉄」です。鉄と硫黄を加熱して化合させたときにできる黒色の物質ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「加熱すると二酸化炭素、水、炭酸ナトリウムに分解する白い物質」",
+              "choices": [
+                      "ろ過",
+                      "飽和水溶液",
+                      "炭酸水素ナトリウム",
+                      "溶質"
+              ],
+              "answer": 2,
+              "explanation": "答えは「炭酸水素ナトリウム」です。加熱すると二酸化炭素、水、炭酸ナトリウムに分解する白い物質ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「火を近づけるとポンという音を出して燃える気体」",
+              "choices": [
+                      "硫化鉄",
+                      "アンモニア",
+                      "水素",
+                      "電解質"
+              ],
+              "answer": 2,
+              "explanation": "答えは「水素」です。火を近づけるとポンという音を出して燃える気体ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「ものを燃やすはたらきを助ける気体」",
+              "choices": [
+                      "酸素",
+                      "電池",
+                      "質量保存の法則",
+                      "電解質"
+              ],
+              "answer": 0,
+              "explanation": "答えは「酸素」です。ものを燃やすはたらきを助ける気体ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「石灰水を白くにごらせる気体」",
+              "choices": [
+                      "電解質",
+                      "二酸化炭素",
+                      "水素",
+                      "溶解"
+              ],
+              "answer": 1,
+              "explanation": "答えは「二酸化炭素」です。石灰水を白くにごらせる気体ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「刺激臭があり、水に非常によく溶けてアルカリ性を示す気体」",
+              "choices": [
+                      "水素イオン",
+                      "電池",
+                      "塩",
+                      "アンモニア"
+              ],
+              "answer": 3,
+              "explanation": "答えは「アンモニア」です。刺激臭があり、水に非常によく溶けてアルカリ性を示す気体ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「塩化銅水溶液の電気分解で陽極から発生する刺激臭のある気体」",
+              "choices": [
+                      "陽イオン",
+                      "酸化銅",
+                      "塩素",
+                      "中和"
+              ],
+              "answer": 2,
+              "explanation": "答えは「塩素」です。塩化銅水溶液の電気分解で陽極から発生する刺激臭のある気体ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「青色リトマス紙を赤色に変える性質」",
+              "choices": [
+                      "陰極",
+                      "酸性",
+                      "陽イオン",
+                      "化合物"
+              ],
+              "answer": 1,
+              "explanation": "答えは「酸性」です。青色リトマス紙を赤色に変える性質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「赤色リトマス紙を青色に変える性質」",
+              "choices": [
+                      "イオン",
+                      "蒸留",
+                      "溶質",
+                      "アルカリ性"
+              ],
+              "answer": 3,
+              "explanation": "答えは「アルカリ性」です。赤色リトマス紙を青色に変える性質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「酸性でもアルカリ性でもない性質」",
+              "choices": [
+                      "陽イオン",
+                      "中性",
+                      "酸素",
+                      "塩化銅"
+              ],
+              "answer": 1,
+              "explanation": "答えは「中性」です。酸性でもアルカリ性でもない性質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「酸とアルカリが互いの性質を打ち消し合う反応」",
+              "choices": [
+                      "炭酸水素ナトリウム",
+                      "陰極",
+                      "電池",
+                      "中和"
+              ],
+              "answer": 3,
+              "explanation": "答えは「中和」です。酸とアルカリが互いの性質を打ち消し合う反応ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「酸の陰イオンとアルカリの陽イオンが結びついてできる物質」",
+              "choices": [
+                      "溶質",
+                      "塩",
+                      "酸素",
+                      "電気分解"
+              ],
+              "answer": 1,
+              "explanation": "答えは「塩」です。酸の陰イオンとアルカリの陽イオンが結びついてできる物質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「酸性の性質のもとになる陽イオン」",
+              "choices": [
+                      "溶媒",
+                      "分子",
+                      "水素イオン",
+                      "飽和水溶液"
+              ],
+              "answer": 2,
+              "explanation": "答えは「水素イオン」です。酸性の性質のもとになる陽イオンことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「アルカリ性の性質のもとになる陰イオン」",
+              "choices": [
+                      "混合物",
+                      "水酸化物イオン",
+                      "陰イオン",
+                      "電気分解"
+              ],
+              "answer": 1,
+              "explanation": "答えは「水酸化物イオン」です。アルカリ性の性質のもとになる陰イオンことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「水溶液にしたとき電流を通す物質」",
+              "choices": [
+                      "電解質",
+                      "塩",
+                      "混合物",
+                      "質量保存の法則"
+              ],
+              "answer": 0,
+              "explanation": "答えは「電解質」です。水溶液にしたとき電流を通す物質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「水溶液にしても電流を通しにくい物質」",
+              "choices": [
+                      "酸素",
+                      "純粋な物質",
+                      "非電解質",
+                      "二酸化炭素"
+              ],
+              "answer": 2,
+              "explanation": "答えは「非電解質」です。水溶液にしても電流を通しにくい物質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「原子や原子団が電子を失ったり受け取ったりして電気を帯びた粒子」",
+              "choices": [
+                      "分解",
+                      "密度",
+                      "原子",
+                      "イオン"
+              ],
+              "answer": 3,
+              "explanation": "答えは「イオン」です。原子や原子団が電子を失ったり受け取ったりして電気を帯びた粒子ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「電子を失って正の電気を帯びた粒子」",
+              "choices": [
+                      "水素イオン",
+                      "化合",
+                      "陽イオン",
+                      "酸化"
+              ],
+              "answer": 2,
+              "explanation": "答えは「陽イオン」です。電子を失って正の電気を帯びた粒子ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「電子を受け取って負の電気を帯びた粒子」",
+              "choices": [
+                      "元素",
+                      "陰イオン",
+                      "分解",
+                      "酸素"
+              ],
+              "answer": 1,
+              "explanation": "答えは「陰イオン」です。電子を受け取って負の電気を帯びた粒子ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「電流を流して物質を分解する化学変化」",
+              "choices": [
+                      "電気分解",
+                      "蒸留",
+                      "陰イオン",
+                      "電池"
+              ],
+              "answer": 0,
+              "explanation": "答えは「電気分解」です。電流を流して物質を分解する化学変化ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「化学変化によって電気エネルギーを取り出す装置」",
+              "choices": [
+                      "塩素",
+                      "水酸化物イオン",
+                      "二酸化炭素",
+                      "電池"
+              ],
+              "answer": 3,
+              "explanation": "答えは「電池」です。化学変化によって電気エネルギーを取り出す装置ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「亜鉛板と銅板、硫酸亜鉛水溶液と硫酸銅水溶液を使う電池」",
+              "choices": [
+                      "ダニエル電池",
+                      "酸化銅",
+                      "溶質",
+                      "分子"
+              ],
+              "answer": 0,
+              "explanation": "答えは「ダニエル電池」です。亜鉛板と銅板、硫酸亜鉛水溶液と硫酸銅水溶液を使う電池ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「電気分解で電源のマイナス極につながる電極」",
+              "choices": [
+                      "化学変化",
+                      "化合物",
+                      "純粋な物質",
+                      "陰極"
+              ],
+              "answer": 3,
+              "explanation": "答えは「陰極」です。電気分解で電源のマイナス極につながる電極ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「電気分解で電源のプラス極につながる電極」",
+              "choices": [
+                      "陰イオン",
+                      "陽イオン",
+                      "陽極",
+                      "水素イオン"
+              ],
+              "answer": 2,
+              "explanation": "答えは「陽極」です。電気分解で電源のプラス極につながる電極ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "chemistry",
+              "q": "次の説明にあてはまる語句はどれ？「水溶液を電気分解すると銅と塩素ができる物質」",
+              "choices": [
+                      "電解質",
+                      "塩化銅",
+                      "酸化",
+                      "炭酸水素ナトリウム"
+              ],
+              "answer": 1,
+              "explanation": "答えは「塩化銅」です。水溶液を電気分解すると銅と塩素ができる物質ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「根の表面にある毛のようなつくりで、水や水に溶けた養分を吸収しやすくする」",
+              "choices": [
+                      "受粉",
+                      "根毛",
+                      "葉緑体",
+                      "静脈"
+              ],
+              "answer": 1,
+              "explanation": "答えは「根毛」です。根の表面にある毛のようなつくりで、水や水に溶けた養分を吸収しやすくすることを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「根から吸収した水や水に溶けた無機養分が通る管」",
+              "choices": [
+                      "受粉",
+                      "子房",
+                      "道管",
+                      "白血球"
+              ],
+              "answer": 2,
+              "explanation": "答えは「道管」です。根から吸収した水や水に溶けた無機養分が通る管ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「葉でつくられた養分が通る管」",
+              "choices": [
+                      "生態系",
+                      "師管",
+                      "動脈",
+                      "魚類"
+              ],
+              "answer": 1,
+              "explanation": "答えは「師管」です。葉でつくられた養分が通る管ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「葉の表面にあり、気体や水蒸気の出入り口になる小さな穴」",
+              "choices": [
+                      "器官",
+                      "根毛",
+                      "気孔",
+                      "受粉"
+              ],
+              "answer": 2,
+              "explanation": "答えは「気孔」です。葉の表面にあり、気体や水蒸気の出入り口になる小さな穴ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「植物細胞にあり、光合成が行われるつくり」",
+              "choices": [
+                      "葉緑体",
+                      "蒸散",
+                      "魚類",
+                      "呼吸"
+              ],
+              "answer": 0,
+              "explanation": "答えは「葉緑体」です。植物細胞にあり、光合成が行われるつくりことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「植物が光を使って二酸化炭素と水からデンプンなどをつくるはたらき」",
+              "choices": [
+                      "光合成",
+                      "種子",
+                      "両生類",
+                      "受粉"
+              ],
+              "answer": 0,
+              "explanation": "答えは「光合成」です。植物が光を使って二酸化炭素と水からデンプンなどをつくるはたらきことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「酸素を使って養分からエネルギーを取り出すはたらき」",
+              "choices": [
+                      "消化酵素",
+                      "ホニュウ類",
+                      "呼吸",
+                      "胚珠"
+              ],
+              "answer": 2,
+              "explanation": "答えは「呼吸」です。酸素を使って養分からエネルギーを取り出すはたらきことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「植物のからだから水が水蒸気として出ていく現象」",
+              "choices": [
+                      "アミラーゼ",
+                      "受精",
+                      "蒸散",
+                      "胞子"
+              ],
+              "answer": 2,
+              "explanation": "答えは「蒸散」です。植物のからだから水が水蒸気として出ていく現象ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「花粉がめしべの先端につくこと」",
+              "choices": [
+                      "師管",
+                      "呼吸",
+                      "肺胞",
+                      "受粉"
+              ],
+              "answer": 3,
+              "explanation": "答えは「受粉」です。花粉がめしべの先端につくことことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「精細胞と卵細胞が合体すること」",
+              "choices": [
+                      "単子葉類",
+                      "道管",
+                      "果実",
+                      "受精"
+              ],
+              "answer": 3,
+              "explanation": "答えは「受精」です。精細胞と卵細胞が合体することことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「受精後に果実になるめしべの一部」",
+              "choices": [
+                      "子房",
+                      "無セキツイ動物",
+                      "セキツイ動物",
+                      "消化"
+              ],
+              "answer": 0,
+              "explanation": "答えは「子房」です。受精後に果実になるめしべの一部ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「受精後に種子になるつくり」",
+              "choices": [
+                      "蒸散",
+                      "魚類",
+                      "裸子植物",
+                      "胚珠"
+              ],
+              "answer": 3,
+              "explanation": "答えは「胚珠」です。受精後に種子になるつくりことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「胚珠が受精後に変化してできるもの」",
+              "choices": [
+                      "果実",
+                      "種子",
+                      "受精",
+                      "遺伝子"
+              ],
+              "answer": 1,
+              "explanation": "答えは「種子」です。胚珠が受精後に変化してできるものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「子房が受精後に変化してできるもの」",
+              "choices": [
+                      "単子葉類",
+                      "果実",
+                      "気孔",
+                      "赤血球"
+              ],
+              "answer": 1,
+              "explanation": "答えは「果実」です。子房が受精後に変化してできるものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「胚珠が子房の中にある植物」",
+              "choices": [
+                      "両生類",
+                      "被子植物",
+                      "蒸散",
+                      "腎臓"
+              ],
+              "answer": 1,
+              "explanation": "答えは「被子植物」です。胚珠が子房の中にある植物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「胚珠がむき出しになっている植物」",
+              "choices": [
+                      "裸子植物",
+                      "核",
+                      "器官",
+                      "遺伝子"
+              ],
+              "answer": 0,
+              "explanation": "答えは「裸子植物」です。胚珠がむき出しになっている植物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「子葉が1枚で、葉脈が平行脈、根がひげ根になりやすい植物のなかま」",
+              "choices": [
+                      "単子葉類",
+                      "コケ植物",
+                      "ハチュウ類",
+                      "根毛"
+              ],
+              "answer": 0,
+              "explanation": "答えは「単子葉類」です。子葉が1枚で、葉脈が平行脈、根がひげ根になりやすい植物のなかまことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「子葉が2枚で、葉脈が網状脈、根が主根と側根になりやすい植物のなかま」",
+              "choices": [
+                      "双子葉類",
+                      "ホニュウ類",
+                      "液胞",
+                      "果実"
+              ],
+              "answer": 0,
+              "explanation": "答えは「双子葉類」です。子葉が2枚で、葉脈が網状脈、根が主根と側根になりやすい植物のなかまことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「維管束があり、胞子でふえる植物」",
+              "choices": [
+                      "魚類",
+                      "遺伝子",
+                      "シダ植物",
+                      "受精"
+              ],
+              "answer": 2,
+              "explanation": "答えは「シダ植物」です。維管束があり、胞子でふえる植物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「維管束が発達せず、胞子でふえる植物」",
+              "choices": [
+                      "遺伝子",
+                      "魚類",
+                      "コケ植物",
+                      "光合成"
+              ],
+              "answer": 2,
+              "explanation": "答えは「コケ植物」です。維管束が発達せず、胞子でふえる植物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「シダ植物やコケ植物などがなかまをふやすためにつくるもの」",
+              "choices": [
+                      "蒸散",
+                      "核",
+                      "液胞",
+                      "胞子"
+              ],
+              "answer": 3,
+              "explanation": "答えは「胞子」です。シダ植物やコケ植物などがなかまをふやすためにつくるものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「背骨をもつ動物」",
+              "choices": [
+                      "ハチュウ類",
+                      "セキツイ動物",
+                      "液胞",
+                      "道管"
+              ],
+              "answer": 1,
+              "explanation": "答えは「セキツイ動物」です。背骨をもつ動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「背骨をもたない動物」",
+              "choices": [
+                      "胞子",
+                      "無セキツイ動物",
+                      "根毛",
+                      "腎臓"
+              ],
+              "answer": 1,
+              "explanation": "答えは「無セキツイ動物」です。背骨をもたない動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「水中で生活し、主にえらで呼吸するセキツイ動物」",
+              "choices": [
+                      "胞子",
+                      "ハチュウ類",
+                      "魚類",
+                      "白血球"
+              ],
+              "answer": 2,
+              "explanation": "答えは「魚類」です。水中で生活し、主にえらで呼吸するセキツイ動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「子は水中でえら呼吸し、成体は肺や皮膚で呼吸するものが多いセキツイ動物」",
+              "choices": [
+                      "果実",
+                      "細胞",
+                      "師管",
+                      "両生類"
+              ],
+              "answer": 3,
+              "explanation": "答えは「両生類」です。子は水中でえら呼吸し、成体は肺や皮膚で呼吸するものが多いセキツイ動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「体表がうろこでおおわれ、肺で呼吸するセキツイ動物」",
+              "choices": [
+                      "ハチュウ類",
+                      "無セキツイ動物",
+                      "受精",
+                      "師管"
+              ],
+              "answer": 0,
+              "explanation": "答えは「ハチュウ類」です。体表がうろこでおおわれ、肺で呼吸するセキツイ動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「体表が羽毛でおおわれ、卵を産むセキツイ動物」",
+              "choices": [
+                      "鳥類",
+                      "被子植物",
+                      "静脈",
+                      "気孔"
+              ],
+              "answer": 0,
+              "explanation": "答えは「鳥類」です。体表が羽毛でおおわれ、卵を産むセキツイ動物ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「子を乳で育てるセキツイ動物」",
+              "choices": [
+                      "ホニュウ類",
+                      "呼吸",
+                      "受粉",
+                      "核"
+              ],
+              "answer": 0,
+              "explanation": "答えは「ホニュウ類」です。子を乳で育てるセキツイ動物ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「生物のからだをつくる基本単位」",
+              "choices": [
+                      "消化",
+                      "細胞壁",
+                      "減数分裂",
+                      "細胞"
+              ],
+              "answer": 3,
+              "explanation": "答えは「細胞」です。生物のからだをつくる基本単位ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「染色体を含み、生命活動の中心になる細胞内のつくり」",
+              "choices": [
+                      "消化酵素",
+                      "液胞",
+                      "双子葉類",
+                      "核"
+              ],
+              "answer": 3,
+              "explanation": "答えは「核」です。染色体を含み、生命活動の中心になる細胞内のつくりことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「細胞の外側を包み、物質の出入りに関係するうすい膜」",
+              "choices": [
+                      "細胞壁",
+                      "組織",
+                      "コケ植物",
+                      "細胞膜"
+              ],
+              "answer": 3,
+              "explanation": "答えは「細胞膜」です。細胞の外側を包み、物質の出入りに関係するうすい膜ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「植物細胞に見られ、細胞を丈夫に支えるつくり」",
+              "choices": [
+                      "細胞壁",
+                      "消化",
+                      "種子",
+                      "師管"
+              ],
+              "answer": 0,
+              "explanation": "答えは「細胞壁」です。植物細胞に見られ、細胞を丈夫に支えるつくりことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「植物細胞でよく発達し、細胞液を含むつくり」",
+              "choices": [
+                      "細胞膜",
+                      "液胞",
+                      "果実",
+                      "シダ植物"
+              ],
+              "answer": 1,
+              "explanation": "答えは「液胞」です。植物細胞でよく発達し、細胞液を含むつくりことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「同じような形やはたらきをもつ細胞が集まったもの」",
+              "choices": [
+                      "組織",
+                      "師管",
+                      "血小板",
+                      "減数分裂"
+              ],
+              "answer": 0,
+              "explanation": "答えは「組織」です。同じような形やはたらきをもつ細胞が集まったものことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「いくつかの組織が集まり、特定のはたらきをする部分」",
+              "choices": [
+                      "血小板",
+                      "器官",
+                      "静脈",
+                      "動脈"
+              ],
+              "answer": 1,
+              "explanation": "答えは「器官」です。いくつかの組織が集まり、特定のはたらきをする部分ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「食物を体に吸収しやすい小さな物質に変えること」",
+              "choices": [
+                      "消化",
+                      "柔毛",
+                      "両生類",
+                      "動脈"
+              ],
+              "answer": 0,
+              "explanation": "答えは「消化」です。食物を体に吸収しやすい小さな物質に変えることことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「食物中の栄養分を分解するはたらきをもつ物質」",
+              "choices": [
+                      "道管",
+                      "種子",
+                      "消化酵素",
+                      "コケ植物"
+              ],
+              "answer": 2,
+              "explanation": "答えは「消化酵素」です。食物中の栄養分を分解するはたらきをもつ物質ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「だ液に含まれ、デンプンを分解する消化酵素」",
+              "choices": [
+                      "アミラーゼ",
+                      "動脈",
+                      "器官",
+                      "液胞"
+              ],
+              "answer": 0,
+              "explanation": "答えは「アミラーゼ」です。だ液に含まれ、デンプンを分解する消化酵素ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「小腸の内側にあり、養分を吸収する面積を大きくするつくり」",
+              "choices": [
+                      "柔毛",
+                      "核",
+                      "胞子",
+                      "組織"
+              ],
+              "answer": 0,
+              "explanation": "答えは「柔毛」です。小腸の内側にあり、養分を吸収する面積を大きくするつくりことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「肺の中にある小さな袋で、酸素と二酸化炭素の交換を行う場所」",
+              "choices": [
+                      "細胞",
+                      "肺胞",
+                      "ハチュウ類",
+                      "受精"
+              ],
+              "answer": 1,
+              "explanation": "答えは「肺胞」です。肺の中にある小さな袋で、酸素と二酸化炭素の交換を行う場所ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「ヘモグロビンを含み、酸素を運ぶ血液成分」",
+              "choices": [
+                      "魚類",
+                      "赤血球",
+                      "静脈",
+                      "師管"
+              ],
+              "answer": 1,
+              "explanation": "答えは「赤血球」です。ヘモグロビンを含み、酸素を運ぶ血液成分ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「病原体などから体を守る血液成分」",
+              "choices": [
+                      "柔毛",
+                      "細胞膜",
+                      "白血球",
+                      "液胞"
+              ],
+              "answer": 2,
+              "explanation": "答えは「白血球」です。病原体などから体を守る血液成分ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「出血したとき血液を固めるはたらきに関係する血液成分」",
+              "choices": [
+                      "血小板",
+                      "セキツイ動物",
+                      "動脈",
+                      "柔毛"
+              ],
+              "answer": 0,
+              "explanation": "答えは「血小板」です。出血したとき血液を固めるはたらきに関係する血液成分ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「心臓から血液を送り出す血管」",
+              "choices": [
+                      "白血球",
+                      "器官",
+                      "動脈",
+                      "魚類"
+              ],
+              "answer": 2,
+              "explanation": "答えは「動脈」です。心臓から血液を送り出す血管ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「血液を心臓へ戻す血管」",
+              "choices": [
+                      "果実",
+                      "静脈",
+                      "蒸散",
+                      "裸子植物"
+              ],
+              "answer": 1,
+              "explanation": "答えは「静脈」です。血液を心臓へ戻す血管ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「血液中の不要物をこし取り、尿をつくる器官」",
+              "choices": [
+                      "ホニュウ類",
+                      "腎臓",
+                      "赤血球",
+                      "蒸散"
+              ],
+              "answer": 1,
+              "explanation": "答えは「腎臓」です。血液中の不要物をこし取り、尿をつくる器官ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「刺激に対して無意識にすばやく起こる反応」",
+              "choices": [
+                      "反射",
+                      "組織",
+                      "呼吸",
+                      "道管"
+              ],
+              "answer": 0,
+              "explanation": "答えは「反射」です。刺激に対して無意識にすばやく起こる反応ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「形質を決めるもとになる情報」",
+              "choices": [
+                      "遺伝子",
+                      "胚珠",
+                      "組織",
+                      "単子葉類"
+              ],
+              "answer": 0,
+              "explanation": "答えは「遺伝子」です。形質を決めるもとになる情報ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「染色体数が半分になる、生殖細胞をつくるための細胞分裂」",
+              "choices": [
+                      "減数分裂",
+                      "裸子植物",
+                      "血小板",
+                      "ハチュウ類"
+              ],
+              "answer": 0,
+              "explanation": "答えは「減数分裂」です。染色体数が半分になる、生殖細胞をつくるための細胞分裂ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "biology",
+              "q": "次の説明にあてはまる語句はどれ？「ある場所の生物と、それらを取りまく環境をひとまとまりに見たもの」",
+              "choices": [
+                      "腎臓",
+                      "被子植物",
+                      "生態系",
+                      "道管"
+              ],
+              "answer": 2,
+              "explanation": "答えは「生態系」です。ある場所の生物と、それらを取りまく環境をひとまとまりに見たものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「光が同じ物質中をまっすぐ進む性質」",
+              "choices": [
+                      "直列回路",
+                      "電力量",
+                      "光の直進",
+                      "オームの法則"
+              ],
+              "answer": 2,
+              "explanation": "答えは「光の直進」です。光が同じ物質中をまっすぐ進む性質ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「光や音が物体の表面ではね返る現象」",
+              "choices": [
+                      "直列回路",
+                      "反射",
+                      "支点",
+                      "振動数"
+              ],
+              "answer": 1,
+              "explanation": "答えは「反射」です。光や音が物体の表面ではね返る現象ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「光が空気中から水中など別の物質へ進むとき、進む向きが曲がる現象」",
+              "choices": [
+                      "電力",
+                      "仕事",
+                      "屈折",
+                      "電磁石"
+              ],
+              "answer": 2,
+              "explanation": "答えは「屈折」です。光が空気中から水中など別の物質へ進むとき、進む向きが曲がる現象ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「境界面に立てた垂線と入射する光の間の角」",
+              "choices": [
+                      "抵抗",
+                      "電流",
+                      "浮力",
+                      "入射角"
+              ],
+              "answer": 3,
+              "explanation": "答えは「入射角」です。境界面に立てた垂線と入射する光の間の角ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「境界面に立てた垂線と反射した光の間の角」",
+              "choices": [
+                      "エネルギー保存",
+                      "反射角",
+                      "実像",
+                      "反射"
+              ],
+              "answer": 1,
+              "explanation": "答えは「反射角」です。境界面に立てた垂線と反射した光の間の角ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「凸レンズで軸に平行な光が集まる点」",
+              "choices": [
+                      "電力量",
+                      "抵抗",
+                      "磁力線",
+                      "焦点"
+              ],
+              "answer": 3,
+              "explanation": "答えは「焦点」です。凸レンズで軸に平行な光が集まる点ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「スクリーンに映すことができる像」",
+              "choices": [
+                      "仕事",
+                      "実像",
+                      "電力量",
+                      "振動数"
+              ],
+              "answer": 1,
+              "explanation": "答えは「実像」です。スクリーンに映すことができる像ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「スクリーンに映すことができず、そこにあるように見える像」",
+              "choices": [
+                      "運動エネルギー",
+                      "虚像",
+                      "摩擦力",
+                      "エネルギー保存"
+              ],
+              "answer": 1,
+              "explanation": "答えは「虚像」です。スクリーンに映すことができず、そこにあるように見える像ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「振動の中心から最大に離れた距離で、音の大きさに関係する量」",
+              "choices": [
+                      "並列回路",
+                      "電磁石",
+                      "焦点",
+                      "振幅"
+              ],
+              "answer": 3,
+              "explanation": "答えは「振幅」です。振動の中心から最大に離れた距離で、音の大きさに関係する量ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「1秒間に振動する回数で、音の高さに関係する量」",
+              "choices": [
+                      "重さ",
+                      "電磁石",
+                      "運動エネルギー",
+                      "振動数"
+              ],
+              "answer": 3,
+              "explanation": "答えは「振動数」です。1秒間に振動する回数で、音の高さに関係する量ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「音を発している、振動している物体」",
+              "choices": [
+                      "音源",
+                      "質量",
+                      "オームの法則",
+                      "重さ"
+              ],
+              "answer": 0,
+              "explanation": "答えは「音源」です。音を発している、振動している物体ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「物体の形や運動のようすを変えるはたらき」",
+              "choices": [
+                      "反射角",
+                      "浮力",
+                      "大気圧",
+                      "力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「力」です。物体の形や運動のようすを変えるはたらきことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「地球が物体を引く力」",
+              "choices": [
+                      "反射",
+                      "重さ",
+                      "入射角",
+                      "重力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「重力」です。地球が物体を引く力ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「場所が変わっても変わらない、物体そのものの量」",
+              "choices": [
+                      "質量",
+                      "発電機",
+                      "浮力",
+                      "磁界"
+              ],
+              "answer": 0,
+              "explanation": "答えは「質量」です。場所が変わっても変わらない、物体そのものの量ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「物体にはたらく重力の大きさ」",
+              "choices": [
+                      "電圧",
+                      "圧力",
+                      "屈折",
+                      "重さ"
+              ],
+              "answer": 3,
+              "explanation": "答えは「重さ」です。物体にはたらく重力の大きさことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「変形した物体がもとの形に戻ろうとしてはたらく力」",
+              "choices": [
+                      "慣性",
+                      "ジュール熱",
+                      "電流",
+                      "弾性力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「弾性力」です。変形した物体がもとの形に戻ろうとしてはたらく力ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「物体の運動をさまたげる向きにはたらく力」",
+              "choices": [
+                      "摩擦力",
+                      "磁力線",
+                      "入射角",
+                      "直流"
+              ],
+              "answer": 0,
+              "explanation": "答えは「摩擦力」です。物体の運動をさまたげる向きにはたらく力ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「水中などで物体にはたらく上向きの力」",
+              "choices": [
+                      "重さ",
+                      "力点",
+                      "慣性",
+                      "浮力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「浮力」です。水中などで物体にはたらく上向きの力ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「一定の面積あたりにはたらく力の大きさ」",
+              "choices": [
+                      "交流",
+                      "位置エネルギー",
+                      "入射角",
+                      "圧力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「圧力」です。一定の面積あたりにはたらく力の大きさことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「空気の重さによって生じる圧力」",
+              "choices": [
+                      "速さ",
+                      "力点",
+                      "大気圧",
+                      "虚像"
+              ],
+              "answer": 2,
+              "explanation": "答えは「大気圧」です。空気の重さによって生じる圧力ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電気の流れ。単位はアンペア」",
+              "choices": [
+                      "等速直線運動",
+                      "弾性力",
+                      "位置エネルギー",
+                      "電流"
+              ],
+              "answer": 3,
+              "explanation": "答えは「電流」です。電気の流れ。単位はアンペアことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流を流そうとするはたらきの大きさ。単位はボルト」",
+              "choices": [
+                      "屈折",
+                      "電圧",
+                      "磁力線",
+                      "速さ"
+              ],
+              "answer": 1,
+              "explanation": "答えは「電圧」です。電流を流そうとするはたらきの大きさ。単位はボルトことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流の流れにくさを表す量。単位はオーム」",
+              "choices": [
+                      "浮力",
+                      "交流",
+                      "大気圧",
+                      "抵抗"
+              ],
+              "answer": 3,
+              "explanation": "答えは「抵抗」です。電流の流れにくさを表す量。単位はオームことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流は電圧に比例し、抵抗に反比例するという関係」",
+              "choices": [
+                      "屈折",
+                      "抵抗",
+                      "オームの法則",
+                      "発電機"
+              ],
+              "answer": 2,
+              "explanation": "答えは「オームの法則」です。電流は電圧に比例し、抵抗に反比例するという関係ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流の通り道が1本になっている回路」",
+              "choices": [
+                      "振動数",
+                      "直列回路",
+                      "エネルギー保存",
+                      "抵抗"
+              ],
+              "answer": 1,
+              "explanation": "答えは「直列回路」です。電流の通り道が1本になっている回路ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流の通り道が枝分かれしている回路」",
+              "choices": [
+                      "弾性力",
+                      "反射角",
+                      "浮力",
+                      "並列回路"
+              ],
+              "answer": 3,
+              "explanation": "答えは「並列回路」です。電流の通り道が枝分かれしている回路ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電気器具が1秒あたりに使う電気エネルギーの量」",
+              "choices": [
+                      "振動数",
+                      "電磁誘導",
+                      "摩擦力",
+                      "電力"
+              ],
+              "answer": 3,
+              "explanation": "答えは「電力」です。電気器具が1秒あたりに使う電気エネルギーの量ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「一定時間に使った電気エネルギーの量」",
+              "choices": [
+                      "発電機",
+                      "反射角",
+                      "電力量",
+                      "振幅"
+              ],
+              "answer": 2,
+              "explanation": "答えは「電力量」です。一定時間に使った電気エネルギーの量ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流が流れることで発生する熱」",
+              "choices": [
+                      "大気圧",
+                      "ジュール熱",
+                      "電磁誘導",
+                      "支点"
+              ],
+              "answer": 1,
+              "explanation": "答えは「ジュール熱」です。電流が流れることで発生する熱ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「磁力がはたらく空間」",
+              "choices": [
+                      "磁界",
+                      "オームの法則",
+                      "直流",
+                      "支点"
+              ],
+              "answer": 0,
+              "explanation": "答えは「磁界」です。磁力がはたらく空間ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「磁界の向きや強さを表すために描く線」",
+              "choices": [
+                      "磁力線",
+                      "光の直進",
+                      "屈折",
+                      "直流"
+              ],
+              "answer": 0,
+              "explanation": "答えは「磁力線」です。磁界の向きや強さを表すために描く線ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「コイルに電流を流して磁石の性質をもたせたもの」",
+              "choices": [
+                      "力",
+                      "エネルギー保存",
+                      "直流",
+                      "電磁石"
+              ],
+              "answer": 3,
+              "explanation": "答えは「電磁石」です。コイルに電流を流して磁石の性質をもたせたものことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「磁界が変化するとコイルに電流が生じる現象」",
+              "choices": [
+                      "浮力",
+                      "電磁誘導",
+                      "ジュール熱",
+                      "電力"
+              ],
+              "answer": 1,
+              "explanation": "答えは「電磁誘導」です。磁界が変化するとコイルに電流が生じる現象ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電磁誘導によって流れる電流」",
+              "choices": [
+                      "屈折",
+                      "誘導電流",
+                      "弾性力",
+                      "慣性"
+              ],
+              "answer": 1,
+              "explanation": "答えは「誘導電流」です。電磁誘導によって流れる電流ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電磁誘導を利用して電気エネルギーを取り出す装置」",
+              "choices": [
+                      "振動数",
+                      "発電機",
+                      "磁界",
+                      "直流"
+              ],
+              "answer": 1,
+              "explanation": "答えは「発電機」です。電磁誘導を利用して電気エネルギーを取り出す装置ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流の向きが一定の電流」",
+              "choices": [
+                      "直流",
+                      "抵抗",
+                      "屈折",
+                      "圧力"
+              ],
+              "answer": 0,
+              "explanation": "答えは「直流」です。電流の向きが一定の電流ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「電流の向きが周期的に変わる電流」",
+              "choices": [
+                      "交流",
+                      "並列回路",
+                      "質量",
+                      "慣性"
+              ],
+              "answer": 0,
+              "explanation": "答えは「交流」です。電流の向きが周期的に変わる電流ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「物体が運動の状態を保とうとする性質」",
+              "choices": [
+                      "直流",
+                      "慣性",
+                      "圧力",
+                      "発電機"
+              ],
+              "answer": 1,
+              "explanation": "答えは「慣性」です。物体が運動の状態を保とうとする性質ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「一直線上を一定の速さで進む運動」",
+              "choices": [
+                      "振動数",
+                      "等速直線運動",
+                      "磁力線",
+                      "虚像"
+              ],
+              "answer": 1,
+              "explanation": "答えは「等速直線運動」です。一直線上を一定の速さで進む運動ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「一定時間あたりに進む道のり」",
+              "choices": [
+                      "速さ",
+                      "振動数",
+                      "オームの法則",
+                      "支点"
+              ],
+              "answer": 0,
+              "explanation": "答えは「速さ」です。一定時間あたりに進む道のりことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「高い位置にある物体がもつエネルギー」",
+              "choices": [
+                      "振動数",
+                      "並列回路",
+                      "位置エネルギー",
+                      "虚像"
+              ],
+              "answer": 2,
+              "explanation": "答えは「位置エネルギー」です。高い位置にある物体がもつエネルギーことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「運動している物体がもつエネルギー」",
+              "choices": [
+                      "大気圧",
+                      "運動エネルギー",
+                      "反射角",
+                      "質量"
+              ],
+              "answer": 1,
+              "explanation": "答えは「運動エネルギー」です。運動している物体がもつエネルギーことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「位置エネルギーと運動エネルギーの和」",
+              "choices": [
+                      "力学的エネルギー",
+                      "運動エネルギー",
+                      "位置エネルギー",
+                      "仕事"
+              ],
+              "answer": 0,
+              "explanation": "答えは「力学的エネルギー」です。位置エネルギーと運動エネルギーの和ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「物体に力を加え、その力の向きに動かしたときの量」",
+              "choices": [
+                      "電磁誘導",
+                      "磁力線",
+                      "仕事",
+                      "電磁石"
+              ],
+              "answer": 2,
+              "explanation": "答えは「仕事」です。物体に力を加え、その力の向きに動かしたときの量ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「一定時間あたりにする仕事の大きさ」",
+              "choices": [
+                      "大気圧",
+                      "重力",
+                      "仕事率",
+                      "慣性"
+              ],
+              "answer": 2,
+              "explanation": "答えは「仕事率」です。一定時間あたりにする仕事の大きさことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「力がはたらく点」",
+              "choices": [
+                      "力点",
+                      "作用点",
+                      "ジュール熱",
+                      "仕事率"
+              ],
+              "answer": 1,
+              "explanation": "答えは「作用点」です。力がはたらく点ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「てこで力を加える点」",
+              "choices": [
+                      "振動数",
+                      "浮力",
+                      "力点",
+                      "磁界"
+              ],
+              "answer": 2,
+              "explanation": "答えは「力点」です。てこで力を加える点ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「てこを支える点」",
+              "choices": [
+                      "抵抗",
+                      "支点",
+                      "仕事率",
+                      "ジュール熱"
+              ],
+              "answer": 1,
+              "explanation": "答えは「支点」です。てこを支える点ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「支点を中心にして棒が回転するしくみ」",
+              "choices": [
+                      "てこ",
+                      "支点",
+                      "交流",
+                      "重さ"
+              ],
+              "answer": 0,
+              "explanation": "答えは「てこ」です。支点を中心にして棒が回転するしくみことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "physics",
+              "q": "次の説明にあてはまる語句はどれ？「エネルギーが形を変えても全体量は保たれるという考え方」",
+              "choices": [
+                      "振幅",
+                      "電力",
+                      "発電機",
+                      "エネルギー保存"
+              ],
+              "answer": 3,
+              "explanation": "答えは「エネルギー保存」です。エネルギーが形を変えても全体量は保たれるという考え方ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地下にある高温でどろどろにとけた物質」",
+              "choices": [
+                      "マグマ",
+                      "寒冷前線",
+                      "太陽高度",
+                      "斑晶"
+              ],
+              "answer": 0,
+              "explanation": "答えは「マグマ」です。地下にある高温でどろどろにとけた物質ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「マグマが地表に流れ出たもの」",
+              "choices": [
+                      "等粒状組織",
+                      "溶岩",
+                      "前線",
+                      "停滞前線"
+              ],
+              "answer": 1,
+              "explanation": "答えは「溶岩」です。マグマが地表に流れ出たものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「マグマが冷えて固まってできた岩石」",
+              "choices": [
+                      "斑状組織",
+                      "火成岩",
+                      "P波",
+                      "南中"
+              ],
+              "answer": 1,
+              "explanation": "答えは「火成岩」です。マグマが冷えて固まってできた岩石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「マグマが地表付近で急に冷えてできた火成岩」",
+              "choices": [
+                      "高気圧",
+                      "火山岩",
+                      "溶岩",
+                      "鉱物"
+              ],
+              "answer": 1,
+              "explanation": "答えは「火山岩」です。マグマが地表付近で急に冷えてできた火成岩ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「マグマが地下深くでゆっくり冷えてできた火成岩」",
+              "choices": [
+                      "泥岩",
+                      "日食",
+                      "深成岩",
+                      "月食"
+              ],
+              "answer": 2,
+              "explanation": "答えは「深成岩」です。マグマが地下深くでゆっくり冷えてできた火成岩ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「大きな結晶と細かい粒の部分からなる火山岩のつくり」",
+              "choices": [
+                      "斑状組織",
+                      "震度",
+                      "寒冷前線",
+                      "鉱物"
+              ],
+              "answer": 0,
+              "explanation": "答えは「斑状組織」です。大きな結晶と細かい粒の部分からなる火山岩のつくりことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「同じくらいの大きさの結晶が組み合わさった深成岩のつくり」",
+              "choices": [
+                      "震度",
+                      "自転",
+                      "等粒状組織",
+                      "前線"
+              ],
+              "answer": 2,
+              "explanation": "答えは「等粒状組織」です。同じくらいの大きさの結晶が組み合わさった深成岩のつくりことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「岩石をつくっている粒」",
+              "choices": [
+                      "深成岩",
+                      "示相化石",
+                      "恒星",
+                      "鉱物"
+              ],
+              "answer": 3,
+              "explanation": "答えは「鉱物」です。岩石をつくっている粒ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「火山岩で、大きな結晶のまわりをうめる細かい粒の部分」",
+              "choices": [
+                      "マグニチュード",
+                      "泥岩",
+                      "石基",
+                      "台風"
+              ],
+              "answer": 2,
+              "explanation": "答えは「石基」です。火山岩で、大きな結晶のまわりをうめる細かい粒の部分ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「火山岩に見られる比較的大きな結晶」",
+              "choices": [
+                      "斑晶",
+                      "石灰岩",
+                      "初期微動継続時間",
+                      "露点"
+              ],
+              "answer": 0,
+              "explanation": "答えは「斑晶」です。火山岩に見られる比較的大きな結晶ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「れき、砂、泥、生物の死がいなどが積もって固まった岩石」",
+              "choices": [
+                      "震源",
+                      "低気圧",
+                      "前線",
+                      "堆積岩"
+              ],
+              "answer": 3,
+              "explanation": "答えは「堆積岩」です。れき、砂、泥、生物の死がいなどが積もって固まった岩石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「れきが固まってできた堆積岩」",
+              "choices": [
+                      "飽和水蒸気量",
+                      "溶岩",
+                      "れき岩",
+                      "火成岩"
+              ],
+              "answer": 2,
+              "explanation": "答えは「れき岩」です。れきが固まってできた堆積岩ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「砂が固まってできた堆積岩」",
+              "choices": [
+                      "れき岩",
+                      "火山岩",
+                      "砂岩",
+                      "初期微動継続時間"
+              ],
+              "answer": 2,
+              "explanation": "答えは「砂岩」です。砂が固まってできた堆積岩ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「泥が固まってできた堆積岩」",
+              "choices": [
+                      "石灰岩",
+                      "斑晶",
+                      "堆積岩",
+                      "泥岩"
+              ],
+              "answer": 3,
+              "explanation": "答えは「泥岩」です。泥が固まってできた堆積岩ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「火山灰などが積もって固まった岩石」",
+              "choices": [
+                      "凝灰岩",
+                      "化石",
+                      "低気圧",
+                      "斑晶"
+              ],
+              "answer": 0,
+              "explanation": "答えは「凝灰岩」です。火山灰などが積もって固まった岩石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「サンゴなどの死がいがもとになり、うすい塩酸で二酸化炭素を出す岩石」",
+              "choices": [
+                      "低気圧",
+                      "台風",
+                      "石灰岩",
+                      "火山岩"
+              ],
+              "answer": 2,
+              "explanation": "答えは「石灰岩」です。サンゴなどの死がいがもとになり、うすい塩酸で二酸化炭素を出す岩石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「放散虫などの殻が海底に積もってできたかたい岩石」",
+              "choices": [
+                      "日食",
+                      "凝灰岩",
+                      "S波",
+                      "チャート"
+              ],
+              "answer": 3,
+              "explanation": "答えは「チャート」です。放散虫などの殻が海底に積もってできたかたい岩石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「過去の生物のからだや生活のあとが地層中に残ったもの」",
+              "choices": [
+                      "等粒状組織",
+                      "化石",
+                      "停滞前線",
+                      "寒冷前線"
+              ],
+              "answer": 1,
+              "explanation": "答えは「化石」です。過去の生物のからだや生活のあとが地層中に残ったものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地層ができた時代を知る手がかりになる化石」",
+              "choices": [
+                      "溶岩",
+                      "示準化石",
+                      "等粒状組織",
+                      "気圧"
+              ],
+              "answer": 1,
+              "explanation": "答えは「示準化石」です。地層ができた時代を知る手がかりになる化石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地層ができた当時の環境を知る手がかりになる化石」",
+              "choices": [
+                      "堆積岩",
+                      "示相化石",
+                      "石基",
+                      "火成岩"
+              ],
+              "answer": 1,
+              "explanation": "答えは「示相化石」です。地層ができた当時の環境を知る手がかりになる化石ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「土砂などが層状に積み重なったもの」",
+              "choices": [
+                      "P波",
+                      "地層",
+                      "マグニチュード",
+                      "日食"
+              ],
+              "answer": 1,
+              "explanation": "答えは「地層」です。土砂などが層状に積み重なったものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地層や岩盤が割れてずれたもの」",
+              "choices": [
+                      "断層",
+                      "低気圧",
+                      "恒星",
+                      "停滞前線"
+              ],
+              "answer": 0,
+              "explanation": "答えは「断層」です。地層や岩盤が割れてずれたものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地層が横からの力で曲がったもの」",
+              "choices": [
+                      "P波",
+                      "しゅう曲",
+                      "れき岩",
+                      "日食"
+              ],
+              "answer": 1,
+              "explanation": "答えは「しゅう曲」です。地層が横からの力で曲がったものことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地震が発生した地下の場所」",
+              "choices": [
+                      "示相化石",
+                      "震源",
+                      "凝灰岩",
+                      "P波"
+              ],
+              "answer": 1,
+              "explanation": "答えは「震源」です。地震が発生した地下の場所ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「震源の真上にあたる地表の点」",
+              "choices": [
+                      "震央",
+                      "月食",
+                      "S波",
+                      "温暖前線"
+              ],
+              "answer": 0,
+              "explanation": "答えは「震央」です。震源の真上にあたる地表の点ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「ある地点での地震のゆれの大きさ」",
+              "choices": [
+                      "前線",
+                      "凝灰岩",
+                      "石基",
+                      "震度"
+              ],
+              "answer": 3,
+              "explanation": "答えは「震度」です。ある地点での地震のゆれの大きさことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地震そのものの規模を表す値」",
+              "choices": [
+                      "震度",
+                      "化石",
+                      "マグニチュード",
+                      "低気圧"
+              ],
+              "answer": 2,
+              "explanation": "答えは「マグニチュード」です。地震そのものの規模を表す値ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「地震で最初に届く速い波」",
+              "choices": [
+                      "P波",
+                      "断層",
+                      "寒冷前線",
+                      "湿度"
+              ],
+              "answer": 0,
+              "explanation": "答えは「P波」です。地震で最初に届く速い波ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「P波のあとに届き、大きなゆれを起こす波」",
+              "choices": [
+                      "S波",
+                      "鉱物",
+                      "火成岩",
+                      "前線"
+              ],
+              "answer": 0,
+              "explanation": "答えは「S波」です。P波のあとに届き、大きなゆれを起こす波ことを表します。"
+      },
+      {
+              "grade": "chu1",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「P波が届いてからS波が届くまでの時間」",
+              "choices": [
+                      "初期微動継続時間",
+                      "公転",
+                      "震央",
+                      "震度"
+              ],
+              "answer": 0,
+              "explanation": "答えは「初期微動継続時間」です。P波が届いてからS波が届くまでの時間ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「空気中の水蒸気が水滴になり始める温度」",
+              "choices": [
+                      "震源",
+                      "露点",
+                      "凝灰岩",
+                      "斑状組織"
+              ],
+              "answer": 1,
+              "explanation": "答えは「露点」です。空気中の水蒸気が水滴になり始める温度ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「空気1m³中に含むことができる水蒸気の最大量」",
+              "choices": [
+                      "石灰岩",
+                      "公転",
+                      "月食",
+                      "飽和水蒸気量"
+              ],
+              "answer": 3,
+              "explanation": "答えは「飽和水蒸気量」です。空気1m³中に含むことができる水蒸気の最大量ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「実際の水蒸気量が飽和水蒸気量の何％かを表す値」",
+              "choices": [
+                      "月食",
+                      "湿度",
+                      "震源",
+                      "火山岩"
+              ],
+              "answer": 1,
+              "explanation": "答えは「湿度」です。実際の水蒸気量が飽和水蒸気量の何％かを表す値ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「天気図でhPaを使って表される、空気が地表などを押す力の大きさ」",
+              "choices": [
+                      "堆積岩",
+                      "湿度",
+                      "チャート",
+                      "気圧"
+              ],
+              "answer": 3,
+              "explanation": "答えは「気圧」です。天気図でhPaを使って表される、空気が地表などを押す力の大きさことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「天気図で気圧の等しい地点を結んだ線」",
+              "choices": [
+                      "等圧線",
+                      "チャート",
+                      "火山岩",
+                      "等粒状組織"
+              ],
+              "answer": 0,
+              "explanation": "答えは「等圧線」です。天気図で気圧の等しい地点を結んだ線ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「まわりより気圧が高く、下降気流が起こりやすいところ」",
+              "choices": [
+                      "チャート",
+                      "台風",
+                      "化石",
+                      "高気圧"
+              ],
+              "answer": 3,
+              "explanation": "答えは「高気圧」です。まわりより気圧が高く、下降気流が起こりやすいところことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「まわりより気圧が低く、上昇気流が起こりやすいところ」",
+              "choices": [
+                      "泥岩",
+                      "低気圧",
+                      "日食",
+                      "地層"
+              ],
+              "answer": 1,
+              "explanation": "答えは「低気圧」です。まわりより気圧が低く、上昇気流が起こりやすいところことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「性質の異なる気団どうしの境目」",
+              "choices": [
+                      "前線",
+                      "湿度",
+                      "温暖前線",
+                      "深成岩"
+              ],
+              "answer": 0,
+              "explanation": "答えは「前線」です。性質の異なる気団どうしの境目ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「暖気が寒気の上にはい上がる前線」",
+              "choices": [
+                      "温暖前線",
+                      "気圧",
+                      "低気圧",
+                      "積乱雲"
+              ],
+              "answer": 0,
+              "explanation": "答えは「温暖前線」です。暖気が寒気の上にはい上がる前線ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「寒気が暖気の下にもぐりこみ、暖気を押し上げる前線」",
+              "choices": [
+                      "湿度",
+                      "S波",
+                      "気圧",
+                      "寒冷前線"
+              ],
+              "answer": 3,
+              "explanation": "答えは「寒冷前線」です。寒気が暖気の下にもぐりこみ、暖気を押し上げる前線ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「ほぼ同じ場所にとどまる前線」",
+              "choices": [
+                      "マグニチュード",
+                      "示準化石",
+                      "断層",
+                      "停滞前線"
+              ],
+              "answer": 3,
+              "explanation": "答えは「停滞前線」です。ほぼ同じ場所にとどまる前線ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「強い上昇気流で発達し、激しい雨や雷をもたらす雲」",
+              "choices": [
+                      "月食",
+                      "地層",
+                      "積乱雲",
+                      "示準化石"
+              ],
+              "answer": 2,
+              "explanation": "答えは「積乱雲」です。強い上昇気流で発達し、激しい雨や雷をもたらす雲ことを表します。"
+      },
+      {
+              "grade": "chu2",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「熱帯の海上で発達した低気圧」",
+              "choices": [
+                      "台風",
+                      "示相化石",
+                      "寒冷前線",
+                      "震度"
+              ],
+              "answer": 0,
+              "explanation": "答えは「台風」です。熱帯の海上で発達した低気圧ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「天体が自分自身の軸を中心に回転する運動」",
+              "choices": [
+                      "停滞前線",
+                      "地層",
+                      "等圧線",
+                      "自転"
+              ],
+              "answer": 3,
+              "explanation": "答えは「自転」です。天体が自分自身の軸を中心に回転する運動ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「天体が別の天体のまわりを回る運動」",
+              "choices": [
+                      "露点",
+                      "示相化石",
+                      "石基",
+                      "公転"
+              ],
+              "answer": 3,
+              "explanation": "答えは「公転」です。天体が別の天体のまわりを回る運動ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「太陽などの天体が真南にきて高度が最も高くなること」",
+              "choices": [
+                      "堆積岩",
+                      "露点",
+                      "南中",
+                      "チャート"
+              ],
+              "answer": 2,
+              "explanation": "答えは「南中」です。太陽などの天体が真南にきて高度が最も高くなることことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「太陽が地平線からどれだけ高い位置に見えるかを表す角度」",
+              "choices": [
+                      "台風",
+                      "石灰岩",
+                      "太陽高度",
+                      "等圧線"
+              ],
+              "answer": 2,
+              "explanation": "答えは「太陽高度」です。太陽が地平線からどれだけ高い位置に見えるかを表す角度ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「太陽、月、地球の順に並び、月が太陽を隠す現象」",
+              "choices": [
+                      "日食",
+                      "震央",
+                      "寒冷前線",
+                      "地層"
+              ],
+              "answer": 0,
+              "explanation": "答えは「日食」です。太陽、月、地球の順に並び、月が太陽を隠す現象ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「太陽、地球、月の順に並び、月が地球の影に入る現象」",
+              "choices": [
+                      "斑状組織",
+                      "月食",
+                      "湿度",
+                      "日食"
+              ],
+              "answer": 1,
+              "explanation": "答えは「月食」です。太陽、地球、月の順に並び、月が地球の影に入る現象ことを表します。"
+      },
+      {
+              "grade": "chu3",
+              "field": "earth",
+              "q": "次の説明にあてはまる語句はどれ？「太陽のように自ら光を出す天体」",
+              "choices": [
+                      "示相化石",
+                      "地層",
+                      "寒冷前線",
+                      "恒星"
+              ],
+              "answer": 3,
+              "explanation": "答えは「恒星」です。太陽のように自ら光を出す天体ことを表します。"
+      }
+    ];
+
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const correctEl = document.getElementById("correctCount");
+    const livesEl = document.getElementById("lives");
+    const comboEl = document.getElementById("comboCount");
+    const bestEl = document.getElementById("bestScore");
+    const messageEl = document.getElementById("message");
+    const unitSelect = document.getElementById("unitSelect");
+    const speedSelect = document.getElementById("speedSelect");
+    const quizBackdrop = document.getElementById("quizBackdrop");
+    const quizBox = document.getElementById("quizBox");
+    const quizTag = document.getElementById("quizTag");
+    const resultEffect = document.getElementById("resultEffect");
+    const questionText = document.getElementById("questionText");
+    const choicesEl = document.getElementById("choices");
+    const explanationEl = document.getElementById("explanation");
+    const continueBtn = document.getElementById("continueBtn");
+    const startOverlay = document.getElementById("startOverlay");
+    const reviewReport = document.getElementById("reviewReport");
 
-    const scoreElement = document.getElementById("score");
-    const bestScoreElement = document.getElementById("bestScore");
-    const messageElement = document.getElementById("message");
+    const grid = 22;
+    const tile = canvas.width / grid;
+    const normalFoodRate = 0.85;
+    const slowBonusTime = 5000;
+    const slowBonusMultiplier = 1.45;
 
-    const gridSize = 20;
-    const tileCount = canvas.width / gridSize;
+    let snake, food, direction, nextDirection;
+    let score = 0;
+    let correctCount = 0;
+    let lives = 3;
+    let combo = 0;
+    let timer = null;
+    let slowTimer = null;
+    let running = false;
+    let paused = false;
+    let slowBonusActive = false;
+    let pendingSlowBonus = false;
+    let currentQuestion = null;
+    let currentFoodType = "normal";
+    let wrongQuestions = [];
+    let wrongLog = [];
+    let revengeMode = false;
+    let revengeQueue = [];
+    let revengeIndex = 0;
+    let bestScore = Number(localStorage.getItem("rikaSnakeBestScore") || 0);
+    bestEl.textContent = bestScore;
 
-    let snake;
-    let food;
-    let dx;
-    let dy;
-    let score;
-    let bestScore = localStorage.getItem("snakeBestScore") || 0;
-    let gameOver;
-    let gameLoop;
-
-    bestScoreElement.textContent = bestScore;
-
-    function startGame() {
-      snake = [
-        { x: 10, y: 10 }
-      ];
-
-      food = {
-        x: 5,
-        y: 5
-      };
-
-      dx = 1;
-      dy = 0;
-      score = 0;
-      gameOver = false;
-
-      scoreElement.textContent = score;
-      messageElement.textContent = "矢印キーで操作";
-
-      clearInterval(gameLoop);
-      gameLoop = setInterval(updateGame, 120);
+    function drawInitial() {
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      ctx.fillStyle = "#22c55e";
+      ctx.fillRect(10 * tile + 2, 10 * tile + 2, tile - 4, tile - 4);
+      drawFoodMark({ x: 15, y: 10, type: "normal" });
     }
 
-    function updateGame() {
-      if (gameOver) return;
+    function startGame() {
+      clearInterval(timer);
+      clearTimeout(slowTimer);
+      snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      score = 0;
+      correctCount = 0;
+      lives = 3;
+      combo = 0;
+      wrongQuestions = [];
+      wrongLog = [];
+      revengeMode = false;
+      revengeQueue = [];
+      revengeIndex = 0;
+      slowBonusActive = false;
+      pendingSlowBonus = false;
+      running = true;
+      paused = false;
+      startOverlay.style.display = "none";
+      reviewReport.style.display = "none";
+      reviewReport.innerHTML = "";
+      createFood();
+      updateStats();
+      setMessage("？マークを取ると理科クイズが出ます");
+      draw();
+      restartLoop(getBaseSpeed());
+    }
+
+    function resetGame() {
+      clearInterval(timer);
+      clearTimeout(slowTimer);
+      running = false;
+      paused = false;
+      revengeMode = false;
+      slowBonusActive = false;
+      pendingSlowBonus = false;
+      startOverlay.style.display = "flex";
+      quizBackdrop.style.display = "none";
+      reviewReport.style.display = "none";
+      reviewReport.innerHTML = "";
+      score = 0;
+      correctCount = 0;
+      lives = 3;
+      combo = 0;
+      wrongQuestions = [];
+      wrongLog = [];
+      updateStats();
+      setMessage("単元を選んでスタート");
+      drawInitial();
+    }
+
+    function pauseOrResume() {
+      if (!running) return;
+      paused = !paused;
+      setMessage(paused ? "一時停止中" : "再開しました");
+    }
+
+    function gameTick() {
+      if (!running || paused) return;
+      direction = nextDirection;
 
       const head = {
-        x: snake[0].x + dx,
-        y: snake[0].y + dy
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
       };
 
-      // 壁にぶつかったらゲームオーバー
-      if (
-        head.x < 0 ||
-        head.x >= tileCount ||
-        head.y < 0 ||
-        head.y >= tileCount
-      ) {
-        endGame();
+      if (hitWall(head) || hitSelf(head)) {
+        endGame("壁か自分の体にぶつかりました");
         return;
-      }
-
-      // 自分の体にぶつかったらゲームオーバー
-      for (let i = 0; i < snake.length; i++) {
-        if (head.x === snake[i].x && head.y === snake[i].y) {
-          endGame();
-          return;
-        }
       }
 
       snake.unshift(head);
 
-      // エサを食べたとき
       if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreElement.textContent = score;
-        createFood();
+        paused = true;
+        currentFoodType = food.type;
+        showQuiz();
       } else {
         snake.pop();
       }
 
-      drawGame();
+      draw();
     }
 
-    function drawGame() {
-      // 背景
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function hitWall(pos) {
+      return pos.x < 0 || pos.x >= grid || pos.y < 0 || pos.y >= grid;
+    }
 
-      // エサ
-      ctx.fillStyle = "#f43f5e";
-      ctx.fillRect(
-        food.x * gridSize,
-        food.y * gridSize,
-        gridSize,
-        gridSize
-      );
-
-      // ヘビ
-      for (let i = 0; i < snake.length; i++) {
-        if (i === 0) {
-          ctx.fillStyle = "#22c55e";
-        } else {
-          ctx.fillStyle = "#86efac";
-        }
-
-        ctx.fillRect(
-          snake[i].x * gridSize,
-          snake[i].y * gridSize,
-          gridSize - 2,
-          gridSize - 2
-        );
-      }
+    function hitSelf(pos) {
+      return snake.some(part => part.x === pos.x && part.y === pos.y);
     }
 
     function createFood() {
-      food = {
-        x: Math.floor(Math.random() * tileCount),
-        y: Math.floor(Math.random() * tileCount)
+      do {
+        food = {
+          x: Math.floor(Math.random() * grid),
+          y: Math.floor(Math.random() * grid),
+          type: Math.random() > normalFoodRate ? "gold" : "normal"
+        };
+      } while (snake && snake.some(part => part.x === food.x && part.y === food.y));
+    }
+
+    function draw() {
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawFoodMark(food);
+
+      snake.forEach((part, index) => {
+        ctx.fillStyle = index === 0 ? "#22c55e" : "#86efac";
+        roundRect(part.x * tile + 2, part.y * tile + 2, tile - 4, tile - 4, 5);
+        ctx.fill();
+      });
+    }
+
+    function drawFoodMark(targetFood) {
+      if (!targetFood) return;
+
+      const centerX = targetFood.x * tile + tile / 2;
+      const centerY = targetFood.y * tile + tile / 2;
+      const isGold = targetFood.type === "gold";
+
+      ctx.fillStyle = isGold ? "#fbbf24" : "#fb7185";
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, tile / 2.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (isGold) {
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = isGold ? "#422006" : "#fff1f2";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(isGold ? "G" : "?", centerX, centerY + 1);
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = "rgba(255,255,255,0.045)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= grid; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * tile, 0);
+        ctx.lineTo(i * tile, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * tile);
+        ctx.lineTo(canvas.width, i * tile);
+        ctx.stroke();
+      }
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function setDirection(dir) {
+      const map = {
+        up: { x: 0, y: -1 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        right: { x: 1, y: 0 }
       };
 
-      // エサがヘビの体の上に出ないようにする
-      for (let i = 0; i < snake.length; i++) {
-        if (food.x === snake[i].x && food.y === snake[i].y) {
-          createFood();
-          return;
-        }
-      }
+      const wanted = map[dir];
+      if (!wanted) return;
+
+      if (direction && wanted.x === -direction.x && wanted.y === -direction.y) return;
+      nextDirection = wanted;
     }
 
-    function changeDirection(direction) {
-      if (direction === "up" && dy !== 1) {
-        dx = 0;
-        dy = -1;
+    document.addEventListener("keydown", event => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        event.preventDefault();
       }
-
-      if (direction === "down" && dy !== -1) {
-        dx = 0;
-        dy = 1;
-      }
-
-      if (direction === "left" && dx !== 1) {
-        dx = -1;
-        dy = 0;
-      }
-
-      if (direction === "right" && dx !== -1) {
-        dx = 1;
-        dy = 0;
-      }
-    }
-
-    document.addEventListener("keydown", function(event) {
-      if (event.key === "ArrowUp") {
-        changeDirection("up");
-      }
-
-      if (event.key === "ArrowDown") {
-        changeDirection("down");
-      }
-
-      if (event.key === "ArrowLeft") {
-        changeDirection("left");
-      }
-
-      if (event.key === "ArrowRight") {
-        changeDirection("right");
-      }
+      if (event.key === "ArrowUp") setDirection("up");
+      if (event.key === "ArrowDown") setDirection("down");
+      if (event.key === "ArrowLeft") setDirection("left");
+      if (event.key === "ArrowRight") setDirection("right");
+      if (event.key === " ") pauseOrResume();
     });
 
-    function endGame() {
-      gameOver = true;
-      clearInterval(gameLoop);
+    speedSelect.addEventListener("change", () => {
+      if (!running || slowBonusActive) return;
+      restartLoop(getBaseSpeed());
+    });
 
-      messageElement.textContent = "ゲームオーバー！リスタートできます";
+    function getFilteredQuestions() {
+      const mode = unitSelect.value;
+      if (mode === "all") return quizData;
+      if (["chu1", "chu2", "chu3"].includes(mode)) {
+        return quizData.filter(item => item.grade === mode);
+      }
+      return quizData.filter(item => item.field === mode);
+    }
+
+    function showQuiz() {
+      revengeMode = false;
+      const questions = getFilteredQuestions();
+      currentQuestion = questions[Math.floor(Math.random() * questions.length)] || quizData[0];
+      renderQuiz(currentQuestion, { mode: "normal", foodType: currentFoodType });
+      setMessage(currentFoodType === "gold" ? "金色のエサです。正解すると得点2倍" : "クイズに答えてください", currentFoodType === "gold" ? "gold" : "");
+    }
+
+    function renderQuiz(question, options = {}) {
+      const mode = options.mode || "normal";
+      const foodType = options.foodType || "normal";
+      const gradeName = { chu1: "中1", chu2: "中2", chu3: "中3" }[question.grade];
+      const fieldName = { chemistry: "化学", biology: "生物", physics: "物理", earth: "地学" }[question.field];
+
+      quizBox.classList.remove("gold-quiz", "revenge-quiz");
+      quizTag.classList.remove("gold", "revenge");
+      resultEffect.className = "result-effect";
+      resultEffect.textContent = "";
+
+      if (mode === "revenge") {
+        quizBox.classList.add("revenge-quiz");
+        quizTag.classList.add("revenge");
+        quizTag.textContent = `リベンジ ${revengeIndex + 1}/${revengeQueue.length}・${gradeName}・${fieldName}`;
+      } else if (foodType === "gold") {
+        quizBox.classList.add("gold-quiz");
+        quizTag.classList.add("gold");
+        quizTag.textContent = `金色のエサ・${gradeName}・${fieldName}`;
+      } else {
+        quizTag.textContent = `${gradeName}・${fieldName}`;
+      }
+
+      questionText.textContent = question.q;
+      choicesEl.innerHTML = "";
+      explanationEl.style.display = "none";
+      explanationEl.textContent = "";
+      continueBtn.style.display = "none";
+      continueBtn.textContent = "ゲームに戻る";
+
+      question.choices.forEach((choice, index) => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.textContent = `${index + 1}. ${choice}`;
+        btn.onclick = () => answerQuiz(index);
+        choicesEl.appendChild(btn);
+      });
+
+      quizBackdrop.style.display = "flex";
+    }
+
+    function answerQuiz(index) {
+      const buttons = document.querySelectorAll(".choice");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === currentQuestion.answer) btn.classList.add("correct");
+        if (i === index && i !== currentQuestion.answer) btn.classList.add("wrong");
+      });
+
+      const isCorrect = index === currentQuestion.answer;
+
+      if (revengeMode) {
+        handleRevengeAnswer(isCorrect, index);
+        return;
+      }
+
+      if (isCorrect) {
+        combo += 1;
+        correctCount += 1;
+
+        let point = 10 + combo * 2;
+        if (currentFoodType === "gold") {
+          point *= 2;
+          pendingSlowBonus = true;
+        }
+
+        score += point;
+        const comboText = combo >= 2 ? `${combo}連続正解！` : "正解！";
+        const goldText = currentFoodType === "gold" ? " 金色ボーナスで得点2倍。" : "";
+        resultEffect.className = "result-effect correct";
+        resultEffect.textContent = `◯ ${comboText}`;
+        setMessage(`${comboText} +${point}点。${goldText}ヘビが伸びました`, combo >= 2 ? "combo" : "");
+        explanationEl.innerHTML = `<strong>◯ 正解！</strong><br>${goldText}${currentQuestion.explanation}`;
+      } else {
+        lives -= 1;
+        combo = 0;
+        snake.pop();
+        recordWrongQuestion(currentQuestion, index);
+        resultEffect.className = "result-effect wrong";
+        resultEffect.textContent = "× 不正解...";
+        setMessage("不正解。ライフが1減り、コンボがリセットされました", "danger");
+        explanationEl.innerHTML = `<strong>× 不正解...</strong><br>${currentQuestion.explanation}`;
+        if (lives <= 0) {
+          continueBtn.textContent = wrongQuestions.length > 0 ? "リベンジモードへ" : "結果を見る";
+        }
+      }
+
+      updateStats();
+      explanationEl.style.display = "block";
+      continueBtn.style.display = "block";
+      draw();
+    }
+
+    function handleRevengeAnswer(isCorrect, index) {
+      if (isCorrect) {
+        lives = 1;
+        combo = 0;
+        revengeMode = false;
+        revengeQueue = [];
+        revengeIndex = 0;
+        resultEffect.className = "result-effect revenge";
+        resultEffect.textContent = "◯ リベンジ成功！";
+        explanationEl.innerHTML = `<strong>復活。</strong><br>${currentQuestion.explanation}`;
+        continueBtn.textContent = "ライフ1で復帰する";
+        setMessage("リベンジ成功。ライフ1で復帰できます", "combo");
+      } else {
+        resultEffect.className = "result-effect wrong";
+        resultEffect.textContent = "× リベンジ失敗...";
+        explanationEl.innerHTML = `<strong>もう一度確認。</strong><br>${currentQuestion.explanation}`;
+        revengeIndex += 1;
+        combo = 0;
+        if (revengeIndex < revengeQueue.length) {
+          continueBtn.textContent = "次のリベンジ問題へ";
+          setMessage("次のリベンジ問題に挑戦できます", "danger");
+        } else {
+          continueBtn.textContent = "結果を見る";
+          setMessage("リベンジ失敗。結果を確認してください", "danger");
+        }
+      }
+
+      updateStats();
+      explanationEl.style.display = "block";
+      continueBtn.style.display = "block";
+    }
+
+    function continueGame() {
+      if (revengeMode) {
+        if (lives > 0) {
+          quizBackdrop.style.display = "none";
+          continueBtn.textContent = "ゲームに戻る";
+          createFood();
+          paused = false;
+          setMessage("ライフ1で復帰。慎重に進もう");
+          draw();
+          return;
+        }
+
+        if (revengeIndex < revengeQueue.length) {
+          currentQuestion = revengeQueue[revengeIndex];
+          renderQuiz(currentQuestion, { mode: "revenge" });
+          setMessage("リベンジ問題に答えてください", "danger");
+          return;
+        }
+
+        endGame("リベンジ失敗");
+        return;
+      }
+
+      quizBackdrop.style.display = "none";
+      continueBtn.textContent = "ゲームに戻る";
+
+      if (lives <= 0) {
+        if (wrongQuestions.length > 0) {
+          startRevengeMode();
+        } else {
+          endGame("ライフがなくなりました");
+        }
+        return;
+      }
+
+      createFood();
+      if (pendingSlowBonus) {
+        activateSlowBonus();
+      }
+      paused = false;
+      setMessage(pendingSlowBonus ? "スピードダウン中。次のエサを取りに行こう" : "続けて？マークを取りに行こう");
+      pendingSlowBonus = false;
+      draw();
+    }
+
+    function startRevengeMode() {
+      revengeMode = true;
+      paused = true;
+      combo = 0;
+      revengeQueue = [...wrongQuestions];
+      revengeIndex = 0;
+      currentQuestion = revengeQueue[revengeIndex];
+      renderQuiz(currentQuestion, { mode: "revenge" });
+      setMessage("リベンジモード。正解すればライフ1で復帰", "danger");
+      updateStats();
+    }
+
+    function recordWrongQuestion(question, selectedIndex) {
+      const record = {
+        ...question,
+        selectedIndex,
+        selectedChoice: question.choices[selectedIndex] || "未選択",
+        correctChoice: question.choices[question.answer]
+      };
+      wrongQuestions.push(record);
+      wrongLog.push(record);
+    }
+
+    function endGame(reason) {
+      clearInterval(timer);
+      clearTimeout(slowTimer);
+      running = false;
+      paused = false;
+      revengeMode = false;
+      slowBonusActive = false;
+      pendingSlowBonus = false;
+      quizBackdrop.style.display = "none";
+      startOverlay.style.display = "flex";
 
       if (score > bestScore) {
         bestScore = score;
-        localStorage.setItem("snakeBestScore", bestScore);
-        bestScoreElement.textContent = bestScore;
+        localStorage.setItem("rikaSnakeBestScore", bestScore);
       }
+      updateStats();
+      setMessage(`ゲーム終了：${reason}。スコア ${score} 点、正解 ${correctCount} 問。`);
+      showReviewReport(reason);
     }
 
-    function restartGame() {
-      startGame();
+    function showReviewReport(reason) {
+      const uniqueWrong = [];
+      const seen = new Set();
+      wrongLog.forEach(item => {
+        const key = item.q;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueWrong.push(item);
+        }
+      });
+
+      const itemsHtml = uniqueWrong.length === 0
+        ? `<p class="mini-info">今回のプレイで間違えた問題はありません。</p>`
+        : `<div class="review-list">${uniqueWrong.map((item, index) => `
+            <div class="review-item">
+              <strong>${index + 1}. ${escapeHtml(item.q)}</strong><br>
+              あなたの答え：${escapeHtml(item.selectedChoice)}<br>
+              <span class="answer">正解：${escapeHtml(item.correctChoice)}</span><br>
+              <span class="explain">解説：${escapeHtml(item.explanation)}</span>
+            </div>
+          `).join("")}</div>`;
+
+      reviewReport.innerHTML = `
+        <h2>復習レポート</h2>
+        <div class="report-summary">
+          <div class="report-box"><span>最終スコア</span><strong>${score} 点</strong></div>
+          <div class="report-box"><span>正解数</span><strong>${correctCount} 問</strong></div>
+          <div class="report-box"><span>終了理由</span><strong>${escapeHtml(reason)}</strong></div>
+        </div>
+        ${itemsHtml}
+      `;
+      reviewReport.style.display = "block";
     }
 
-    startGame();
+    function updateStats() {
+      scoreEl.textContent = score;
+      correctEl.textContent = correctCount;
+      livesEl.textContent = lives;
+      comboEl.textContent = combo;
+      bestEl.textContent = bestScore;
+    }
+
+    function setMessage(text, type = "") {
+      messageEl.textContent = text;
+      messageEl.className = type ? `message ${type}` : "message";
+    }
+
+    function getBaseSpeed() {
+      return Number(speedSelect.value);
+    }
+
+    function restartLoop(intervalMs) {
+      clearInterval(timer);
+      timer = setInterval(gameTick, intervalMs);
+    }
+
+    function activateSlowBonus() {
+      slowBonusActive = true;
+      restartLoop(Math.round(getBaseSpeed() * slowBonusMultiplier));
+      clearTimeout(slowTimer);
+      slowTimer = setTimeout(() => {
+        slowBonusActive = false;
+        if (running) {
+          restartLoop(getBaseSpeed());
+          setMessage("スピードが元に戻りました");
+        }
+      }, slowBonusTime);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    drawInitial();
   </script>
 </body>
 </html>
